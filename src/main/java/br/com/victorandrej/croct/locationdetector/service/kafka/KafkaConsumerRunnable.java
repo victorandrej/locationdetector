@@ -13,21 +13,18 @@ import br.com.victorandrej.croct.locationdetector.service.kafka.enums.ConsumerSt
 import br.com.victorandrej.croct.locationdetector.service.kafka.exception.ConsumerStartException;
 import br.com.victorandrej.croct.locationdetector.service.kafka.exception.StopConsumerException;
 
-public class KafConsumer<K, V> implements Closeable, Runnable {
+public class KafkaConsumerRunnable<K, V> implements Closeable, Runnable {
 	private KafkaConsumer<K, V> kafConsumer;
 	private Consumer<V> consumer;
 	private ConsumerStatus status;
 
-	public KafConsumer(Properties properties, Collection<String> topics, Consumer<V> consumer) {
+	public KafkaConsumerRunnable(Properties properties, Collection<String> topics, Consumer<V> consumer) {
 		this.kafConsumer = new KafkaConsumer<K, V>(properties);
 		this.kafConsumer.subscribe(topics);
 		this.consumer = consumer;
 		this.status = ConsumerStatus.CREATED;
 	}
 
-	/**
-	 * Para o consumer, esse metodo e ThreadSafe
-	 */
 	public void stop() {
 		if (!this.status.equals(ConsumerStatus.RUNNING))
 			return;
@@ -38,9 +35,6 @@ public class KafConsumer<K, V> implements Closeable, Runnable {
 		return this.status;
 	}
 
-	/***
-	 * libera os resources do consumer
-	 */
 	@Override
 	public void close() throws IOException {
 		this.releaseResources();
@@ -50,14 +44,11 @@ public class KafConsumer<K, V> implements Closeable, Runnable {
 		this.kafConsumer.close();
 	}
 
-	/***
-	 * Esse metodo nao e threadSafe
-	 */
 	@Override
 	public void run() {
-		if(this.status.equals(ConsumerStatus.RUNNING))
+		if (this.status.equals(ConsumerStatus.RUNNING))
 			throw new ConsumerStartException("Consumer em execucao por outra thread");
-		
+
 		this.status = ConsumerStatus.RUNNING;
 
 		try {

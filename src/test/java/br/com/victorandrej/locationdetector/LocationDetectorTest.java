@@ -2,7 +2,6 @@ package br.com.victorandrej.locationdetector;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Optional;
@@ -28,14 +27,14 @@ import br.com.victorandrej.croct.locationdetector.record.Request;
 import br.com.victorandrej.croct.locationdetector.record.TopicResponse;
 import br.com.victorandrej.croct.locationdetector.serializer.JacksonDeserializer;
 import br.com.victorandrej.croct.locationdetector.serializer.JacksonSerializer;
-import br.com.victorandrej.croct.locationdetector.service.kafka.KafConsumer;
+import br.com.victorandrej.croct.locationdetector.service.kafka.KafkaConsumerRunnable;
 import br.com.victorandrej.croct.locationdetector.service.kafka.enums.ConsumerStatus;
 import br.com.victorandrej.croct.locationdetector.util.PropertiesUtils;
 
 class LocationDetectorTest {
 	// Sem esta propriedade um teste interfira no outro
 
-	KafConsumer<String, Request> serverConsumer;
+	KafkaConsumerRunnable<String, Request> serverConsumer;
 	KafkaProducer<String, Request> producer;
 	KafkaConsumer<String, TopicResponse> consumer;
 
@@ -43,7 +42,7 @@ class LocationDetectorTest {
 		LocationDetector locationDetector = new LocationDetector(ApiToken.TOKEN, "localhost:9092",
 				LocationDetector.LOCATION_DETECTOR_RESPONSE, "false", 1000, 120);
 
-		serverConsumer = new KafConsumer<>(
+		serverConsumer = new KafkaConsumerRunnable<>(
 				PropertiesUtils.createConsumerProperties("localhost:9092", LocationDetector.LOCATION_GROUP),
 				Arrays.asList(LocationDetector.LOCATION_DETECTOR_REQUEST), locationDetector);
 		new Thread(serverConsumer).start();

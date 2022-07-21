@@ -25,7 +25,7 @@ import br.com.victorandrej.croct.locationdetector.record.TopicResponse;
 import br.com.victorandrej.croct.locationdetector.service.ApiStack;
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackConsumptionException;
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackUnknownException;
-import br.com.victorandrej.croct.locationdetector.service.kafka.KafConsumer;
+import br.com.victorandrej.croct.locationdetector.service.kafka.KafkaConsumerRunnable;
 import br.com.victorandrej.croct.locationdetector.util.PropertiesUtils;
 
 public final class LocationDetector implements Consumer<Request> {
@@ -40,7 +40,7 @@ public final class LocationDetector implements Consumer<Request> {
 		String topicRequest = System.getProperty("topicRequest", LOCATION_DETECTOR_REQUEST);
 		String useHttps = System.getProperty("https", "true");
 		String groupId = System.getProperty("groupId", LOCATION_GROUP);
-		int maxCacheableIps = Integer.parseInt(System.getProperty("ipCache", "1000"));
+		int maxCacheableIps = Integer.parseInt(System.getProperty("maxCacheIp", "1000"));
 		int cacheMinuteTimeout = Integer.parseInt(System.getProperty("cacheTimeout", "30"));
 
 		if (acessKey.isEmpty())
@@ -53,9 +53,9 @@ public final class LocationDetector implements Consumer<Request> {
 
 		Properties properties = PropertiesUtils.createConsumerProperties(server.get(), groupId);
 
-		KafConsumer<String, Request> consumer = new KafConsumer<>(properties, Arrays.asList(topicRequest), detector);
-
-		consumer.run();
+		try (KafkaConsumerRunnable<String, Request> consumer = new KafkaConsumerRunnable<>(properties, Arrays.asList(topicRequest), detector)) {
+			consumer.run();
+		}
 
 	}
 

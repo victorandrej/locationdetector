@@ -12,7 +12,7 @@ import br.com.victorandrej.croct.locationdetector.service.apistack.exception.Api
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackUnknownException;
 
 class ApiStackTest {
-	
+
 	ApiStack apiStack;
 
 	@BeforeEach
@@ -26,16 +26,17 @@ class ApiStackTest {
 			apiStack.call("awdodwa.com.br", Location.class);
 		});
 	}
+
 	@Test
 	void erroDesconhecidoTest() {
 		Assert.assertThrows(ApiStackUnknownException.class, () -> {
 			apiStack.call("http://www.google.com.br", Location.class);
 		});
 	}
-	
+
 	@Test
-	void ipExistente() throws IOException, ApiStackConsumptionException, ApiStackUnknownException {
-	  apiStack.call("www.google.com.br", Location.class);
+	void ipExistenteTest() throws IOException, ApiStackConsumptionException, ApiStackUnknownException {
+		apiStack.call("www.google.com.br", Location.class);
 	}
-		
+
 }

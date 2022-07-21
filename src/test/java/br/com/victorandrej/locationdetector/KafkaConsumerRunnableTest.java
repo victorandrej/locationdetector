@@ -18,7 +18,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import br.com.victorandrej.croct.locationdetector.service.kafka.KafConsumer;
+import br.com.victorandrej.croct.locationdetector.service.kafka.KafkaConsumerRunnable;
 import br.com.victorandrej.croct.locationdetector.service.kafka.enums.ConsumerStatus;
 import br.com.victorandrej.croct.locationdetector.service.kafka.exception.ConsumerStartException;
 
@@ -27,7 +27,7 @@ import br.com.victorandrej.croct.locationdetector.service.kafka.exception.Consum
  * @author victor
  *
  */
-class KafConsumerTest {
+class KafkaConsumerRunnableTest {
 	KafkaProducer<String, String> producer;
 	Properties consumerPropeties;
 
@@ -55,14 +55,13 @@ class KafConsumerTest {
 			producer.send(new ProducerRecord<String, String>(topic, "Chave", "Valor")).get();
 
 		LocalTime time = LocalTime.now();
-		KafConsumer<String, String> kafConsumer = new KafConsumer<>(consumerPropeties, Arrays.asList(topic), (r) -> {
-		});
+		KafkaConsumerRunnable<String, String> kafConsumer = new KafkaConsumerRunnable<>(consumerPropeties,
+				Arrays.asList(topic), (r) -> {});
 		Thread t = new Thread(kafConsumer);
 		t.start();
 		Thread.sleep(1000);
 		kafConsumer.stop();
 		while (true) {
-
 			if (kafConsumer.getStatus().equals(ConsumerStatus.DEAD))
 				return;
 
@@ -75,9 +74,9 @@ class KafConsumerTest {
 	@Test
 	void erroAoTentarExecutarOConsumerEmDuasThreadTest() {
 		Assert.assertThrows(ConsumerStartException.class, () -> {
-			var kafConsumer = new KafConsumer<>(consumerPropeties, Arrays.asList("NAOINICIAR"), (r) -> {
+			var kafConsumer = new KafkaConsumerRunnable<>(consumerPropeties, Arrays.asList("NAOINICIAR"), (r) -> {
 			});
-			
+
 			new Thread(kafConsumer).start();
 			Thread.sleep(100);
 			kafConsumer.run();

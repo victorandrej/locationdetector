@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import br.com.victorandrej.croct.locationdetector.service.kafka.KafConsumer;
 import br.com.victorandrej.croct.locationdetector.service.kafka.enums.ConsumerStatus;
-import br.com.victorandrej.croct.locationdetector.service.kafka.exception.KafConsumerDeadException;
+import br.com.victorandrej.croct.locationdetector.service.kafka.exception.ConsumerStartException;
 
 /**
  * 
@@ -51,7 +51,7 @@ class KafConsumerTest {
 	@Test
 	void forcarParadaTest() throws InterruptedException, ExecutionException, TimeLimitExceededException {
 		String topic = Integer.toString(new Random().nextInt());
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 25; i++)
 			producer.send(new ProducerRecord<String, String>(topic, "Chave", "Valor")).get();
 
 		LocalTime time = LocalTime.now();
@@ -59,11 +59,11 @@ class KafConsumerTest {
 		});
 		Thread t = new Thread(kafConsumer);
 		t.start();
-		
+		Thread.sleep(1000);
+		kafConsumer.stop();
 		while (true) {
-			kafConsumer.stop();
 
-			if (!kafConsumer.getStatus().equals(ConsumerStatus.RUNNING))
+			if (kafConsumer.getStatus().equals(ConsumerStatus.DEAD))
 				return;
 
 			if (time.plusSeconds(30).isBefore(LocalTime.now()))
@@ -73,13 +73,15 @@ class KafConsumerTest {
 	}
 
 	@Test
-	void naoIniciarAposParadoTest() {
-		Assert.assertThrows(KafConsumerDeadException.class, () -> {
-			try (var kafConsumer = new KafConsumer<>(consumerPropeties, Arrays.asList("REQUEST"), (r) -> {
-			})) {
-				kafConsumer.stop();
-				kafConsumer.run();
-			}
+	void erroAoTentarExecutarOConsumerEmDuasThreadTest() {
+		Assert.assertThrows(ConsumerStartException.class, () -> {
+			var kafConsumer = new KafConsumer<>(consumerPropeties, Arrays.asList("NAOINICIAR"), (r) -> {
+			});
+			
+			new Thread(kafConsumer).start();
+			Thread.sleep(100);
+			kafConsumer.run();
+
 		});
 	}
 

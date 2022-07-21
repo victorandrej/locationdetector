@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import br.com.victorandrej.croct.locationdetector.service.kafka.enums.ConsumerStatus;
-import br.com.victorandrej.croct.locationdetector.service.kafka.exception.KafConsumerDeadException;
+import br.com.victorandrej.croct.locationdetector.service.kafka.exception.ConsumerStartException;
 import br.com.victorandrej.croct.locationdetector.service.kafka.exception.StopConsumerException;
 
 public class KafConsumer<K, V> implements Closeable, Runnable {
@@ -29,6 +29,8 @@ public class KafConsumer<K, V> implements Closeable, Runnable {
 	 * Para o consumer, esse metodo e ThreadSafe
 	 */
 	public void stop() {
+		if (!this.status.equals(ConsumerStatus.RUNNING))
+			return;
 		this.status = ConsumerStatus.STOPPING;
 	}
 
@@ -37,7 +39,7 @@ public class KafConsumer<K, V> implements Closeable, Runnable {
 	}
 
 	/***
-	 * Fecha o consumer, o mesmo que chamar {@link #stop() Stop}
+	 * libera os resources do consumer
 	 */
 	@Override
 	public void close() throws IOException {
@@ -45,15 +47,17 @@ public class KafConsumer<K, V> implements Closeable, Runnable {
 	}
 
 	private void releaseResources() {
-		if (this.status.equals(ConsumerStatus.STOPPED))
-			this.kafConsumer.close();
+		this.kafConsumer.close();
 	}
 
+	/***
+	 * Esse metodo nao e threadSafe
+	 */
 	@Override
 	public void run() {
-		if (this.status.equals(ConsumerStatus.DEAD))
-			throw new KafConsumerDeadException("Consumer esta morto");
-
+		if(this.status.equals(ConsumerStatus.RUNNING))
+			throw new ConsumerStartException("Consumer em execucao por outra thread");
+		
 		this.status = ConsumerStatus.RUNNING;
 
 		try {

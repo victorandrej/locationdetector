@@ -1,10 +1,10 @@
 package br.com.victorandrej.croct.locationdetector.service.kafka.exception;
 
-public class KafConsumerDeadException extends RuntimeException {
+public class ConsumerStartException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	public KafConsumerDeadException(String string) {
+	public ConsumerStartException(String string) {
 		super(string);
 	}
 

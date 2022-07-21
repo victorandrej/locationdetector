@@ -12,12 +12,12 @@ import br.com.victorandrej.croct.locationdetector.service.apistack.exception.Api
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackUnknownException;
 
 class ApiStackTest {
-	String APIKEY = "af380cad4953091d2bbf246d87575cd8";
+	
 	ApiStack apiStack;
 
 	@BeforeEach
 	void iniciarApiStack() {
-		this.apiStack = new ApiStack(APIKEY, false);
+		this.apiStack = new ApiStack(ApiToken.TOKEN, false);
 	}
 
 	@Test

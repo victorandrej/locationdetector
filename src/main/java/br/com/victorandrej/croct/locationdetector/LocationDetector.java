@@ -1,5 +1,6 @@
 package br.com.victorandrej.croct.locationdetector;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,14 +28,18 @@ import br.com.victorandrej.croct.locationdetector.service.apistack.exception.Api
 import br.com.victorandrej.croct.locationdetector.service.kafka.KafConsumer;
 import br.com.victorandrej.croct.locationdetector.util.PropertiesUtils;
 
-class LocationDetector implements Consumer<Request> {
+public final class LocationDetector implements Consumer<Request> {
+	public static final String LOCATION_DETECTOR_RESPONSE = "LOCATION_DETECTOR_RESPONSE";
+	public static final String LOCATION_DETECTOR_REQUEST = "LOCATION_DETECTOR_REQUEST";
+	public static final String LOCATION_GROUP = "LOCATION_DETECTOR";
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws ParameterException, IOException {
 		Optional<String> acessKey = Optional.ofNullable(System.getProperty("acessKey"));
 		Optional<String> server = Optional.ofNullable(System.getProperty("server"));
-		Optional<String> topic = Optional.ofNullable(System.getProperty("topic"));
+		String topicResponse = System.getProperty("topicResponse", LOCATION_DETECTOR_RESPONSE);
+		String topicRequest = System.getProperty("topicRequest", LOCATION_DETECTOR_REQUEST);
 		String useHttps = System.getProperty("https", "true");
-		String groupId = System.getProperty("groupId", "LOCATION_DETECTOR");
+		String groupId = System.getProperty("groupId", LOCATION_GROUP);
 		int maxCacheableIps = Integer.parseInt(System.getProperty("ipCache", "1000"));
 		int cacheMinuteTimeout = Integer.parseInt(System.getProperty("cacheTimeout", "30"));
 
@@ -42,16 +47,15 @@ class LocationDetector implements Consumer<Request> {
 			throw new ParameterException("chave de acesso nao informada");
 		if (server.isEmpty())
 			throw new ParameterException("servidor nao informado");
-		if (topic.isEmpty())
-			throw new ParameterException("topico nao informado");
 
-		LocationDetector detector = new LocationDetector(acessKey.get(), server.get(), topic.get(), useHttps, groupId,
+		LocationDetector detector = new LocationDetector(acessKey.get(), server.get(), topicResponse, useHttps,
 				maxCacheableIps, cacheMinuteTimeout);
 
 		Properties properties = PropertiesUtils.createConsumerProperties(server.get(), groupId);
-		try (KafConsumer<String, Request> consumer = new KafConsumer<>(properties, Arrays.asList(topic.get()),detector)) {
-			consumer.run();
-		}
+
+		KafConsumer<String, Request> consumer = new KafConsumer<>(properties, Arrays.asList(topicRequest), detector);
+
+		consumer.run();
 
 	}
 
@@ -62,8 +66,8 @@ class LocationDetector implements Consumer<Request> {
 	private Cache<Object, Object> clientCache;
 	private KafkaProducer<String, Object> producer;
 
-	public LocationDetector(String acessKey, String server, String topic, String useHttps, String groupId,
-			int maxCacheableIps, int cacheMinuteTimeout) {
+	public LocationDetector(String acessKey, String server, String topic, String useHttps, int maxCacheableIps,
+			int cacheMinuteTimeout) {
 		this.acessKey = acessKey;
 		this.topic = topic;
 		this.useHttps = useHttps;
@@ -105,7 +109,7 @@ class LocationDetector implements Consumer<Request> {
 	private boolean isValidCache(Response cache) {
 		LocalDateTime inCacheTime = Timestamp.from(Instant.ofEpochMilli(cache.timeStamp())).toLocalDateTime();
 		LocalDateTime nowTime = LocalDateTime.now();
-		
+
 		return inCacheTime.plusMinutes(cacheMinuteTimeout).isAfter(nowTime);
 	}
 

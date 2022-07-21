@@ -1,6 +1,7 @@
 package br.com.victorandrej.croct.locationdetector.service;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -9,14 +10,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.com.victorandrej.croct.locationdetector.service.apistack.error.record.ApiStackError;
 import br.com.victorandrej.croct.locationdetector.service.apistack.error.record.ApiStackUnknownError;
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackConsumptionException;
 import br.com.victorandrej.croct.locationdetector.service.apistack.exception.ApiStackUnknownException;
-import br.com.victorandrej.croct.locationdetector.service.interfaces.ThrowableFunction;
 
 public class ApiStack {
 	private String apiUrl = "api.ipstack.com/";
@@ -27,7 +26,7 @@ public class ApiStack {
 		this.acessKey = acessKey;
 	}
 
-	@SuppressWarnings("unchecked")
+
 	public <T> T call(String url, Class<T> typeclass)
 			throws IOException, ApiStackConsumptionException, ApiStackUnknownException {
 		StringBuilder sb = new StringBuilder();
@@ -40,37 +39,34 @@ public class ApiStack {
 		HttpGet get = new HttpGet(sb.toString());
 		HttpResponse response = client.execute(get);
 		HttpEntity entity = response.getEntity();
-		
+
 		String content = EntityUtils.toString(entity);
-		
-		ObjectMapper jsonMapper = new ObjectMapper();
 
-		Object result = tryHidder(() -> new ApiStackConsumptionException(jsonMapper.readValue(content, ApiStackError.class)));
-		
-		if (result instanceof ApiStackConsumptionException)
-			throw (ApiStackConsumptionException) result;
-		
-		// a api pode retornar um json diferente do erro em documentacao, mas com estado
-		// ok, exemplo em teste
-		result = tryHidder(() -> new ApiStackUnknownException(jsonMapper.readValue(content, ApiStackUnknownError.class)));
-		
-		if (result instanceof ApiStackUnknownException)
-			throw (ApiStackUnknownException) result;
+		Optional<T> result = deserialize(typeclass, content);
 
-		result = tryHidder(() -> jsonMapper.readValue(content, typeclass));
-		
-		if (result instanceof JsonMappingException)
-			throw new IOException(content);
+		if (result.isPresent())
+			return result.get();
 
-		return (T) result;
+		Optional<ApiStackError> stackError = deserialize(ApiStackError.class, content);
+
+		if (stackError.isPresent())
+			throw new ApiStackConsumptionException(stackError.get());
+
+		// a api pode retornar um json diferente do erro em documentacao, mas com estado ok, exemplo em teste
+		Optional<ApiStackUnknownError> unknowError = deserialize(ApiStackUnknownError.class, content);
+
+		if (unknowError.isPresent())
+			throw new ApiStackUnknownException(unknowError.get());
+
+		throw new IOException(content);
 
 	}
 
-	private Object tryHidder(ThrowableFunction f) {
+	private <T> Optional<T> deserialize(Class<T> classType, String content) {
 		try {
-			return f.execute();
+			return Optional.of(new ObjectMapper().readValue(content, classType));
 		} catch (Throwable e) {
-			return e;
+			return Optional.ofNullable(null);
 		}
 	}
 

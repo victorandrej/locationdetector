@@ -36,15 +36,18 @@ public final class LocationDetector implements Consumer<Request> {
 	public static void main(String[] args) throws ParameterException, IOException {
 		Optional<String> acessKey = Optional.ofNullable(System.getProperty("acessKey"));
 		Optional<String> server = Optional.ofNullable(System.getProperty("server"));
+		
 		String topicResponse = System.getProperty("topicResponse", LOCATION_DETECTOR_RESPONSE);
 		String topicRequest = System.getProperty("topicRequest", LOCATION_DETECTOR_REQUEST);
 		String useHttps = System.getProperty("https", "true");
 		String groupId = System.getProperty("groupId", LOCATION_GROUP);
+		
 		int maxCacheableIps = Integer.parseInt(System.getProperty("maxCacheIp", "1000"));
 		int cacheMinuteTimeout = Integer.parseInt(System.getProperty("cacheTimeout", "30"));
 
 		if (acessKey.isEmpty())
 			throw new ParameterException("chave de acesso nao informada");
+		
 		if (server.isEmpty())
 			throw new ParameterException("servidor nao informado");
 

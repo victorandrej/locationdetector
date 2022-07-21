@@ -26,9 +26,8 @@ public class KafkaConsumerRunnable<K, V> implements Closeable, Runnable {
 	}
 
 	public void stop() {
-		if (!this.status.equals(ConsumerStatus.RUNNING))
-			return;
-		this.status = ConsumerStatus.STOPPING;
+		if (this.status.equals(ConsumerStatus.RUNNING))
+			this.status = ConsumerStatus.STOPPING;
 	}
 
 	public ConsumerStatus getStatus() {

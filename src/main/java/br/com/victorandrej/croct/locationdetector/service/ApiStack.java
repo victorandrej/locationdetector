@@ -46,16 +46,19 @@ public class ApiStack {
 		ObjectMapper jsonMapper = new ObjectMapper();
 
 		Object result = tryHidder(() -> new ApiStackConsumptionException(jsonMapper.readValue(content, ApiStackError.class)));
+		
 		if (result instanceof ApiStackConsumptionException)
 			throw (ApiStackConsumptionException) result;
-
+		
 		// a api pode retornar um json diferente do erro em documentacao, mas com estado
 		// ok, exemplo em teste
 		result = tryHidder(() -> new ApiStackUnknownException(jsonMapper.readValue(content, ApiStackUnknownError.class)));
+		
 		if (result instanceof ApiStackUnknownException)
 			throw (ApiStackUnknownException) result;
 
 		result = tryHidder(() -> jsonMapper.readValue(content, typeclass));
+		
 		if (result instanceof JsonMappingException)
 			throw new IOException(content);
 

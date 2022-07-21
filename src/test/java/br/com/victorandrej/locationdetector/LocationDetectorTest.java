@@ -97,7 +97,7 @@ class LocationDetectorTest {
 	}
 
 	@Test
-	void enviarSolicitacaoCorretaParaOServidor() throws InterruptedException, ExecutionException {
+	void enviarSolicitacaoCorretaParaOServidorTest() throws InterruptedException, ExecutionException {
 		var request = new Request("victorandrej", Instant.now().toEpochMilli(), "www.google.com");
 		producer.send(new ProducerRecord<String, Request>(LocationDetector.LOCATION_DETECTOR_REQUEST, request)).get();
 		var response = waitForResponse(60);
@@ -108,7 +108,7 @@ class LocationDetectorTest {
 	}
 
 	@Test
-	void enviarSolicitacaoErradaParaOSerivdor() throws Exception {
+	void enviarSolicitacaoErradaParaOSerivdorTest() throws Exception {
 		var request = new Request("victorandrej", Instant.now().toEpochMilli(), "http://www.google.com");
 		producer.send(new ProducerRecord<String, Request>(LocationDetector.LOCATION_DETECTOR_REQUEST, request)).get();
 		var response = waitForResponse(60);
